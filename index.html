@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Géo FR">
+<title>Géo Quiz — Départements de France</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,600;1,9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf6ee;
+  --surface: #ffffff;
+  --ink: #1a1a2e;
+  --ink-soft: #4a4a6a;
+  --ink-mute: #8a8aa0;
+  --line: #e8e2d4;
+  --accent: #c14a36;
+  --good: #4a7a4e;
+  --good-bg: #e6efe1;
+  --bad: #b94238;
+  --bad-bg: #f5e0dc;
+  --warm: #b8772b;
+  --warm-bg: #fbecd3;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: 'Inter', -apple-system, sans-serif; font-size: 16px; line-height: 1.5; min-height: 100vh; min-height: 100dvh; }
+.serif { font-family: 'Fraunces', Georgia, serif; }
+.app { max-width: 480px; margin: 0 auto; padding: 14px 20px max(24px, env(safe-area-inset-bottom)); min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+.header { display: flex; align-items: center; justify-content: space-between; padding-block: 8px 18px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
+.brand { font-family: 'Fraunces', serif; font-weight: 800; font-size: 22px; letter-spacing: -0.02em; font-style: italic; }
+.brand-num { display: inline-block; background: var(--accent); color: white; font-style: normal; font-size: 11px; font-weight: 700; font-family: 'Inter', sans-serif; padding: 3px 7px; border-radius: 4px; margin-left: 4px; vertical-align: 3px; letter-spacing: 0.06em; }
+.streak { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--ink-soft); }
+main { flex: 1; display: flex; flex-direction: column; }
+.view { display: none; flex: 1; flex-direction: column; }
+.view.active { display: flex; }
+.progress { display: flex; gap: 4px; margin-bottom: 22px; }
+.dot { flex: 1; height: 3px; background: var(--line); border-radius: 2px; transition: background 0.3s; }
+.dot.correct { background: var(--good); }
+.dot.wrong { background: var(--bad); }
+.q-card { animation: fadeIn 0.35s cubic-bezier(.2,.7,.3,1); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.q-label { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 14px; }
+.q-text { font-family: 'Fraunces', serif; font-size: 26px; line-height: 1.22; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 26px; }
+.q-highlight { display: inline-block; background: linear-gradient(180deg, transparent 62%, rgba(193,74,54,0.22) 62%); padding: 0 3px; font-weight: 600; font-style: italic; }
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; text-align: left; font-size: 16px; font-weight: 500; color: var(--ink); cursor: pointer; transition: transform 0.08s ease, border-color 0.2s, background 0.2s; font-family: inherit; min-height: 56px; display: flex; align-items: center; gap: 12px; width: 100%; }
+.option:active:not(:disabled) { transform: scale(0.98); }
+.option:hover:not(:disabled) { border-color: var(--ink-soft); }
+.option-label { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--ink-soft); flex-shrink: 0; font-family: 'Fraunces', serif; }
+.option.correct { background: var(--good-bg); border-color: var(--good); color: var(--good); }
+.option.correct .option-label { background: var(--good); color: white; border-color: var(--good); }
+.option.wrong { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
+.option.wrong .option-label { background: var(--bad); color: white; border-color: var(--bad); }
+.option:disabled { cursor: default; }
+.feedback { margin-top: 18px; padding: 14px 16px; border-radius: 12px; font-size: 14px; display: none; line-height: 1.45; }
+.feedback.show { display: block; }
+.feedback.good { background: var(--good-bg); color: var(--good); }
+.feedback.bad { background: var(--bad-bg); color: var(--bad); }
+.feedback strong { font-weight: 700; }
+.feedback small { display: block; margin-top: 4px; opacity: 0.85; font-size: 13px; }
+.next-btn { margin-top: 14px; background: var(--ink); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; width: 100%; display: none; letter-spacing: 0.01em; }
+.next-btn.show { display: block; animation: fadeIn 0.25s ease; }
+.next-btn:active { transform: scale(0.99); }
+.nav { display: flex; justify-content: space-around; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 18px; }
+.nav-btn { background: transparent; border: none; padding: 6px 10px; font-size: 11px; font-weight: 500; color: var(--ink-mute); font-family: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; letter-spacing: 0.02em; }
+.nav-btn.active { color: var(--ink); }
+.nav-btn svg { width: 22px; height: 22px; stroke-width: 1.7; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+.section-title { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; margin: 4px 0 18px; font-style: italic; }
+.section-title.small { font-size: 16px; font-style: normal; font-weight: 700; margin-top: 24px; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-soft); }
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 10px; text-align: center; }
+.stat-num { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 700; letter-spacing: -0.03em; display: block; line-height: 1; margin-bottom: 6px; }
+.stat-label { font-size: 10px; color: var(--ink-mute); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+.dept-list { display: flex; flex-direction: column; gap: 6px; padding-bottom: 12px; }
+.dept-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
+.dept-num { font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px; min-width: 36px; color: var(--accent); }
+.dept-name { flex: 1; min-width: 0; }
+.dept-name small { color: var(--ink-mute); font-weight: 400; display: block; font-size: 12px; margin-top: 1px; }
+.dept-score { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; background: var(--bg); color: var(--ink-mute); letter-spacing: 0.02em; }
+.dept-score.mastered { background: var(--good-bg); color: var(--good); }
+.dept-score.learning { background: var(--warm-bg); color: var(--warm); }
+.dept-score.weak { background: var(--bad-bg); color: var(--bad); }
+.setting-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); gap: 16px; }
+.setting-row label { font-weight: 500; flex: 1; }
+.setting-row small { display: block; color: var(--ink-mute); font-size: 12px; font-weight: 400; margin-top: 2px; }
+select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: 14px; font-family: inherit; color: var(--ink); font-weight: 500; }
+.reset-btn { background: var(--bad-bg); color: var(--bad); border: none; padding: 12px 16px; font-weight: 600; width: 100%; margin-top: 22px; cursor: pointer; border-radius: 10px; font-family: inherit; font-size: 14px; }
+.tip { font-size: 12px; color: var(--ink-mute); margin-top: 20px; line-height: 1.6; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.tip strong { color: var(--ink); }
+.notif-status { font-size: 11px; padding: 3px 7px; border-radius: 4px; margin-left: 6px; font-weight: 600; }
+.notif-status.granted { background: var(--good-bg); color: var(--good); }
+.notif-status.denied { background: var(--bad-bg); color: var(--bad); }
+.empty { text-align: center; padding: 40px 20px; color: var(--ink-mute); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="brand">Géo<span class="brand-num">FR</span></div>
+    <div class="streak" title="Série en cours">🔥 <span id="streakNum">0</span></div>
+  </header>
+
+  <main>
+    <section class="view active" id="quizView">
+      <div class="progress" id="progress"></div>
+      <div class="q-card" id="qCard"></div>
+    </section>
+
+    <section class="view" id="statsView">
+      <h2 class="section-title">Tes statistiques</h2>
+      <div class="stat-grid">
+        <div class="stat-card"><span class="stat-num" id="statTotal">0</span><span class="stat-label">Réponses</span></div>
+        <div class="stat-card"><span class="stat-num" id="statRate">—</span><span class="stat-label">Réussite</span></div>
+        <div class="stat-card"><span class="stat-num" id="statMast">0</span><span class="stat-label">Maîtrisés</span></div>
+      </div>
+      <h3 class="section-title small">Par département</h3>
+      <div class="dept-list" id="deptList"></div>
+    </section>
+
+    <section class="view" id="settingsView">
+      <h2 class="section-title">Réglages</h2>
+      <div class="setting-row">
+        <label>Rappels<small>Notification à intervalle régulier <span id="notifStatus"></span></small></label>
+        <select id="notifInterval">
+          <option value="0">Désactivé</option>
+          <option value="15">15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">1 h</option>
+          <option value="120">2 h</option>
+          <option value="240">4 h</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label>Mode d'apprentissage<small>Comment choisir la prochaine question</small></label>
+        <select id="difficulty">
+          <option value="adaptive">Adaptatif</option>
+          <option value="random">100% aléatoire</option>
+          <option value="weak">Mes points faibles</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label>Inclure l'outre-mer<small>5 départements supplémentaires (971–976)</small></label>
+        <select id="includeOM">
+          <option value="0">Non</option>
+          <option value="1">Oui</option>
+        </select>
+      </div>
+      <button class="reset-btn" id="resetBtn">Tout réinitialiser</button>
+      <div class="tip">
+        <strong>💡 Ajouter à l'écran d'accueil</strong><br>
+        Sur iPhone : Safari → bouton Partager → « Sur l'écran d'accueil ». Sur Android : menu Chrome → « Installer l'application ». Tu auras une vraie icône, plein écran, sans barre du navigateur.<br><br>
+        <strong>À propos des rappels</strong> : ils ne fonctionnent que tant que l'onglet/app reste ouvert en arrière-plan. Pour un vrai rappel persistant, il faudrait un PWA avec service worker — dis-le moi si tu veux qu'on ajoute ça.
+      </div>
+    </section>
+  </main>
+
+  <nav class="nav">
+    <button class="nav-btn active" data-view="quiz">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+      Quiz
+    </button>
+    <button class="nav-btn" data-view="stats">
+      <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l3-4 3 3 5-7"/></svg>
+      Stats
+    </button>
+    <button class="nav-btn" data-view="settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Réglages
+    </button>
+  </nav>
+</div>
+
+<script>
+/* === DONNÉES === */
+const DEPTS = [
+  {n:"01",name:"Ain",chef:"Bourg-en-Bresse"},
+  {n:"02",name:"Aisne",chef:"Laon"},
+  {n:"03",name:"Allier",chef:"Moulins"},
+  {n:"04",name:"Alpes-de-Haute-Provence",chef:"Digne-les-Bains"},
+  {n:"05",name:"Hautes-Alpes",chef:"Gap"},
+  {n:"06",name:"Alpes-Maritimes",chef:"Nice"},
+  {n:"07",name:"Ardèche",chef:"Privas"},
+  {n:"08",name:"Ardennes",chef:"Charleville-Mézières"},
+  {n:"09",name:"Ariège",chef:"Foix"},
+  {n:"10",name:"Aube",chef:"Troyes"},
+  {n:"11",name:"Aude",chef:"Carcassonne"},
+  {n:"12",name:"Aveyron",chef:"Rodez"},
+  {n:"13",name:"Bouches-du-Rhône",chef:"Marseille"},
+  {n:"14",name:"Calvados",chef:"Caen"},
+  {n:"15",name:"Cantal",chef:"Aurillac"},
+  {n:"16",name:"Charente",chef:"Angoulême"},
+  {n:"17",name:"Charente-Maritime",chef:"La Rochelle"},
+  {n:"18",name:"Cher",chef:"Bourges"},
+  {n:"19",name:"Corrèze",chef:"Tulle"},
+  {n:"2A",name:"Corse-du-Sud",chef:"Ajaccio"},
+  {n:"2B",name:"Haute-Corse",chef:"Bastia"},
+  {n:"21",name:"Côte-d'Or",chef:"Dijon"},
+  {n:"22",name:"Côtes-d'Armor",chef:"Saint-Brieuc"},
+  {n:"23",name:"Creuse",chef:"Guéret"},
+  {n:"24",name:"Dordogne",chef:"Périgueux"},
+  {n:"25",name:"Doubs",chef:"Besançon"},
+  {n:"26",name:"Drôme",chef:"Valence"},
+  {n:"27",name:"Eure",chef:"Évreux"},
+  {n:"28",name:"Eure-et-Loir",chef:"Chartres"},
+  {n:"29",name:"Finistère",chef:"Quimper"},
+  {n:"30",name:"Gard",chef:"Nîmes"},
+  {n:"31",name:"Haute-Garonne",chef:"Toulouse"},
+  {n:"32",name:"Gers",chef:"Auch"},
+  {n:"33",name:"Gironde",chef:"Bordeaux"},
+  {n:"34",name:"Hérault",chef:"Montpellier"},
+  {n:"35",name:"Ille-et-Vilaine",chef:"Rennes"},
+  {n:"36",name:"Indre",chef:"Châteauroux"},
+  {n:"37",name:"Indre-et-Loire",chef:"Tours"},
+  {n:"38",name:"Isère",chef:"Grenoble"},
+  {n:"39",name:"Jura",chef:"Lons-le-Saunier"},
+  {n:"40",name:"Landes",chef:"Mont-de-Marsan"},
+  {n:"41",name:"Loir-et-Cher",chef:"Blois"},
+  {n:"42",name:"Loire",chef:"Saint-Étienne"},
+  {n:"43",name:"Haute-Loire",chef:"Le Puy-en-Velay"},
+  {n:"44",name:"Loire-Atlantique",chef:"Nantes"},
+  {n:"45",name:"Loiret",chef:"Orléans"},
+  {n:"46",name:"Lot",chef:"Cahors"},
+  {n:"47",name:"Lot-et-Garonne",chef:"Agen"},
+  {n:"48",name:"Lozère",chef:"Mende"},
+  {n:"49",name:"Maine-et-Loire",chef:"Angers"},
+  {n:"50",name:"Manche",chef:"Saint-Lô"},
+  {n:"51",name:"Marne",chef:"Châlons-en-Champagne"},
+  {n:"52",name:"Haute-Marne",chef:"Chaumont"},
+  {n:"53",name:"Mayenne",chef:"Laval"},
+  {n:"54",name:"Meurthe-et-Moselle",chef:"Nancy"},
+  {n:"55",name:"Meuse",chef:"Bar-le-Duc"},
+  {n:"56",name:"Morbihan",chef:"Vannes"},
+  {n:"57",name:"Moselle",chef:"Metz"},
+  {n:"58",name:"Nièvre",chef:"Nevers"},
+  {n:"59",name:"Nord",chef:"Lille"},
+  {n:"60",name:"Oise",chef:"Beauvais"},
+  {n:"61",name:"Orne",chef:"Alençon"},
+  {n:"62",name:"Pas-de-Calais",chef:"Arras"},
+  {n:"63",name:"Puy-de-Dôme",chef:"Clermont-Ferrand"},
+  {n:"64",name:"Pyrénées-Atlantiques",chef:"Pau"},
+  {n:"65",name:"Hautes-Pyrénées",chef:"Tarbes"},
+  {n:"66",name:"Pyrénées-Orientales",chef:"Perpignan"},
+  {n:"67",name:"Bas-Rhin",chef:"Strasbourg"},
+  {n:"68",name:"Haut-Rhin",chef:"Colmar"},
+  {n:"69",name:"Rhône",chef:"Lyon"},
+  {n:"70",name:"Haute-Saône",chef:"Vesoul"},
+  {n:"71",name:"Saône-et-Loire",chef:"Mâcon"},
+  {n:"72",name:"Sarthe",chef:"Le Mans"},
+  {n:"73",name:"Savoie",chef:"Chambéry"},
+  {n:"74",name:"Haute-Savoie",chef:"Annecy"},
+  {n:"75",name:"Paris",chef:"Paris"},
+  {n:"76",name:"Seine-Maritime",chef:"Rouen"},
+  {n:"77",name:"Seine-et-Marne",chef:"Melun"},
+  {n:"78",name:"Yvelines",chef:"Versailles"},
+  {n:"79",name:"Deux-Sèvres",chef:"Niort"},
+  {n:"80",name:"Somme",chef:"Amiens"},
+  {n:"81",name:"Tarn",chef:"Albi"},
+  {n:"82",name:"Tarn-et-Garonne",chef:"Montauban"},
+  {n:"83",name:"Var",chef:"Toulon"},
+  {n:"84",name:"Vaucluse",chef:"Avignon"},
+  {n:"85",name:"Vendée",chef:"La Roche-sur-Yon"},
+  {n:"86",name:"Vienne",chef:"Poitiers"},
+  {n:"87",name:"Haute-Vienne",chef:"Limoges"},
+  {n:"88",name:"Vosges",chef:"Épinal"},
+  {n:"89",name:"Yonne",chef:"Auxerre"},
+  {n:"90",name:"Territoire de Belfort",chef:"Belfort"},
+  {n:"91",name:"Essonne",chef:"Évry-Courcouronnes"},
+  {n:"92",name:"Hauts-de-Seine",chef:"Nanterre"},
+  {n:"93",name:"Seine-Saint-Denis",chef:"Bobigny"},
+  {n:"94",name:"Val-de-Marne",chef:"Créteil"},
+  {n:"95",name:"Val-d'Oise",chef:"Cergy"}
+];
+const OM = [
+  {n:"971",name:"Guadeloupe",chef:"Basse-Terre"},
+  {n:"972",name:"Martinique",chef:"Fort-de-France"},
+  {n:"973",name:"Guyane",chef:"Cayenne"},
+  {n:"974",name:"La Réunion",chef:"Saint-Denis"},
+  {n:"976",name:"Mayotte",chef:"Mamoudzou"}
+];
+
+/* === STOCKAGE (localStorage + fallback mémoire) === */
+const memStore = {};
+const Store = {
+  get(k, def) {
+    try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : def; }
+    catch { return k in memStore ? memStore[k] : def; }
+  },
+  set(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); }
+    catch { memStore[k] = v; }
+  },
+  clear() {
+    try { localStorage.clear(); } catch {}
+    for (const k in memStore) delete memStore[k];
+  }
+};
+
+/* === ÉTAT === */
+const state = {
+  stats: Store.get('stats', {}),
+  streak: Store.get('streak', 0),
+  total: Store.get('total', 0),
+  correct: Store.get('correct', 0),
+  recent: Store.get('recent', []),
+  notifInterval: Store.get('notifInterval', 0),
+  includeOM: Store.get('includeOM', 0),
+  difficulty: Store.get('difficulty', 'adaptive')
+};
+
+const pool = () => state.includeOM == 1 ? [...DEPTS, ...OM] : DEPTS;
+
+/* === TYPES DE QUESTIONS === */
+const Q_TYPES = [
+  { id:'numToName',  prompt: d => `Quel département a le numéro <span class="q-highlight">${d.n}</span>&nbsp;?`,           getAns: d => d.name, field: 'name' },
+  { id:'nameToNum',  prompt: d => `Quel est le numéro du département <span class="q-highlight">${d.name}</span>&nbsp;?`,    getAns: d => d.n,    field: 'n' },
+  { id:'nameToChef', prompt: d => `Quel est le chef-lieu de <span class="q-highlight">${d.name}</span>&nbsp;?`,             getAns: d => d.chef, field: 'chef' },
+  { id:'chefToName', prompt: d => `<span class="q-highlight">${d.chef}</span> est le chef-lieu de quel département&nbsp;?`, getAns: d => d.name, field: 'name' },
+  { id:'numToChef',  prompt: d => `Quel est le chef-lieu du département <span class="q-highlight">${d.n}</span>&nbsp;?`,    getAns: d => d.chef, field: 'chef' },
+  { id:'chefToNum',  prompt: d => `<span class="q-highlight">${d.chef}</span>&nbsp;: numéro du département&nbsp;?`,         getAns: d => d.n,    field: 'n' }
+];
+
+/* === SÉLECTION DU DÉPARTEMENT (répétition espacée) === */
+function pickDept() {
+  const p = pool();
+  if (state.difficulty === 'random') return p[Math.floor(Math.random() * p.length)];
+
+  const now = Date.now();
+  const weights = p.map(d => {
+    const s = state.stats[d.n] || { asked: 0, correct: 0, lastAsked: 0 };
+    const rate = s.asked > 0 ? s.correct / s.asked : 0.4;
+    const errorBoost = 1 + (1 - rate) * 3;
+    // cooldown : on évite de retomber sur le même tout de suite
+    const sinceLast = s.lastAsked ? (now - s.lastAsked) / 60000 : 9999;
+    const recencyMul = Math.min(1, sinceLast / 5); // pleine pondération après 5 min
+    const unseenBoost = s.asked === 0 ? 1.8 : 1;
+    if (state.difficulty === 'weak' && rate >= 0.75 && s.asked >= 3) return 0.05;
+    return Math.max(0.05, errorBoost * recencyMul * unseenBoost);
+  });
+  const total = weights.reduce((a,b)=>a+b,0);
+  let r = Math.random() * total;
+  for (let i = 0; i < p.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return p[i];
+  }
+  return p[p.length - 1];
+}
+
+function makeQuestion() {
+  const dept = pickDept();
+  const qt = Q_TYPES[Math.floor(Math.random() * Q_TYPES.length)];
+  const correct = qt.getAns(dept);
+
+  // Distracteurs : autres départements, mêmes types de valeur
+  const others = pool().filter(d => d.n !== dept.n);
+  const shuffled = [...others].sort(() => Math.random() - 0.5);
+  const distractors = [];
+  for (const d of shuffled) {
+    const v = qt.getAns(d);
+    if (v !== correct && !distractors.includes(v)) distractors.push(v);
+    if (distractors.length === 3) break;
+  }
+
+  const options = [correct, ...distractors].sort(() => Math.random() - 0.5);
+  return { dept, qt, correct, options, prompt: qt.prompt(dept) };
+}
+
+/* === RENDU QUESTION === */
+let currentQ = null;
+let answered = false;
+
+function renderQ() {
+  currentQ = makeQuestion();
+  answered = false;
+  const card = document.getElementById('qCard');
+  card.innerHTML = `
+    <div class="q-label">Question</div>
+    <div class="q-text">${currentQ.prompt}</div>
+    <div class="options">
+      ${currentQ.options.map((opt, i) => `
+        <button class="option" data-i="${i}">
+          <span class="option-label">${String.fromCharCode(65+i)}</span>
+          <span>${opt}</span>
+        </button>
+      `).join('')}
+    </div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="nextBtn">Question suivante →</button>
+  `;
+  card.style.animation = 'none';
+  void card.offsetHeight;
+  card.style.animation = '';
+
+  card.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => handleAnswer(parseInt(btn.dataset.i)));
+  });
+  document.getElementById('nextBtn').addEventListener('click', renderQ);
+}
+
+function handleAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  const chosen = currentQ.options[idx];
+  const isCorrect = chosen === currentQ.correct;
+
+  document.querySelectorAll('.option').forEach((btn, i) => {
+    btn.disabled = true;
+    if (currentQ.options[i] === currentQ.correct) btn.classList.add('correct');
+    else if (i === idx) btn.classList.add('wrong');
+  });
+
+  const fb = document.getElementById('feedback');
+  const d = currentQ.dept;
+  if (isCorrect) {
+    fb.className = 'feedback good show';
+    fb.innerHTML = `✓ Bonne réponse&nbsp;! <strong>${d.n} · ${d.name}</strong> · <em>${d.chef}</em>`;
+  } else {
+    fb.className = 'feedback bad show';
+    fb.innerHTML = `✗ La réponse était <strong>${currentQ.correct}</strong>.<small>Pense-y&nbsp;: ${d.n} · ${d.name} · ${d.chef}</small>`;
+  }
+  document.getElementById('nextBtn').classList.add('show');
+
+  const n = d.n;
+  if (!state.stats[n]) state.stats[n] = { asked: 0, correct: 0, lastAsked: 0 };
+  state.stats[n].asked++;
+  if (isCorrect) state.stats[n].correct++;
+  state.stats[n].lastAsked = Date.now();
+  state.total++;
+  if (isCorrect) state.correct++;
+  state.streak = isCorrect ? state.streak + 1 : 0;
+  state.recent.push(isCorrect);
+  if (state.recent.length > 10) state.recent.shift();
+
+  Store.set('stats', state.stats);
+  Store.set('streak', state.streak);
+  Store.set('total', state.total);
+  Store.set('correct', state.correct);
+  Store.set('recent', state.recent);
+
+  updateStreakUI();
+  updateProgressUI();
+}
+
+/* === UI === */
+function updateStreakUI() {
+  document.getElementById('streakNum').textContent = state.streak;
+}
+
+function updateProgressUI() {
+  const prog = document.getElementById('progress');
+  prog.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    const r = state.recent[i];
+    if (r === true) dot.classList.add('correct');
+    else if (r === false) dot.classList.add('wrong');
+    prog.appendChild(dot);
+  }
+}
+
+function renderStats() {
+  document.getElementById('statTotal').textContent = state.total;
+  const rate = state.total > 0 ? Math.round((state.correct / state.total) * 100) : null;
+  document.getElementById('statRate').textContent = rate !== null ? rate + '%' : '—';
+
+  const p = pool();
+  let mastered = 0;
+  const rows = p.map(d => {
+    const s = state.stats[d.n] || { asked: 0, correct: 0 };
+    let cls = '', label = '—';
+    if (s.asked >= 3) {
+      const r = Math.round((s.correct / s.asked) * 100);
+      label = r + '%';
+      if (r >= 80) { cls = 'mastered'; mastered++; }
+      else if (r >= 50) cls = 'learning';
+      else cls = 'weak';
+    } else if (s.asked > 0) {
+      label = `${s.correct}/${s.asked}`;
+    }
+    return `<div class="dept-row">
+      <span class="dept-num">${d.n}</span>
+      <span class="dept-name">${d.name}<small>${d.chef}</small></span>
+      <span class="dept-score ${cls}">${label}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('deptList').innerHTML = rows;
+  document.getElementById('statMast').textContent = mastered;
+}
+
+/* === RÉGLAGES === */
+function refreshNotifStatus() {
+  const el = document.getElementById('notifStatus');
+  if (!('Notification' in window)) { el.textContent = ''; return; }
+  if (Notification.permission === 'granted') { el.innerHTML = '<span class="notif-status granted">autorisé</span>'; }
+  else if (Notification.permission === 'denied') { el.innerHTML = '<span class="notif-status denied">refusé</span>'; }
+  else { el.textContent = ''; }
+}
+
+function bindSettings() {
+  const ni = document.getElementById('notifInterval');
+  ni.value = state.notifInterval;
+  ni.addEventListener('change', async () => {
+    const v = parseInt(ni.value);
+    state.notifInterval = v;
+    Store.set('notifInterval', v);
+    if (v > 0 && 'Notification' in window) {
+      if (Notification.permission === 'default') await Notification.requestPermission();
+    }
+    refreshNotifStatus();
+    scheduleNotif();
+  });
+
+  const om = document.getElementById('includeOM');
+  om.value = state.includeOM;
+  om.addEventListener('change', () => {
+    state.includeOM = parseInt(om.value);
+    Store.set('includeOM', state.includeOM);
+  });
+
+  const df = document.getElementById('difficulty');
+  df.value = state.difficulty;
+  df.addEventListener('change', () => {
+    state.difficulty = df.value;
+    Store.set('difficulty', state.difficulty);
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (confirm('Effacer toute ta progression ? Cette action est définitive.')) {
+      Store.clear();
+      state.stats = {}; state.streak = 0; state.total = 0; state.correct = 0; state.recent = [];
+      updateStreakUI(); updateProgressUI();
+      if (document.getElementById('statsView').classList.contains('active')) renderStats();
+    }
+  });
+
+  refreshNotifStatus();
+}
+
+/* === NOTIFICATIONS === */
+let notifTimer = null;
+function scheduleNotif() {
+  if (notifTimer) clearTimeout(notifTimer);
+  if (!state.notifInterval) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  notifTimer = setTimeout(() => {
+    const q = makeQuestion();
+    const txt = q.prompt.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ');
+    try {
+      const n = new Notification('Géo Quiz 🇫🇷', { body: txt, tag: 'geoquiz', icon: '' });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch (e) {}
+    scheduleNotif();
+  }, state.notifInterval * 60 * 1000);
+}
+
+/* === NAVIGATION === */
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(v + 'View').classList.add('active');
+  document.querySelector(`.nav-btn[data-view="${v}"]`).classList.add('active');
+  if (v === 'stats') renderStats();
+  if (v === 'settings') refreshNotifStatus();
+}
+document.querySelectorAll('.nav-btn').forEach(b => {
+  b.addEventListener('click', () => showView(b.dataset.view));
+});
+
+/* === INIT === */
+bindSettings();
+updateStreakUI();
+updateProgressUI();
+renderQ();
+scheduleNotif();
+</script>
+</body>
+</html>
